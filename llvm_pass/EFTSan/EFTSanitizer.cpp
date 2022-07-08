@@ -177,7 +177,7 @@ void EFTSanitizer::SetConstant(Function *F, Value *Op1, Value *BOGEP, Instructio
                   insId}, "my_gep_set_c");
   IRBI.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRBI.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -216,7 +216,7 @@ void EFTSanitizer::SetConstant(Function *F, Value *Op1, Value *BOGEP, Instructio
     StoreList.push_back(dyn_cast<StoreInst>(StoreIns6));
   }
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_set_constant", VoidTy, MPtrTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_set_constant", VoidTy, MPtrTy, Int64Ty, Int64Ty);
     IRBI.CreateCall(SetRealTemp, {BOGEP, Add, insId});
   }
 }
@@ -602,7 +602,7 @@ void EFTSanitizer::createGEP(Function *F, int index, int *instId){
             Add = IRB.CreateURem(Add, Num_Entries);
             Value *BOGEP = IRB.CreateGEP(ShadowSL, Add);
             if(DEBUG){
-              SetRealTemp = M->getOrInsertFunction("fpsan_index", VoidTy, Int64Ty, MPtrTy);
+              SetRealTemp = M->getOrInsertFunction("eftsan_index", VoidTy, Int64Ty, MPtrTy);
               IRB.CreateCall(SetRealTemp, {Add, BOGEP});
             }
 
@@ -703,7 +703,7 @@ void EFTSanitizer::callGetArgument(Function *F){
       size_t Idx =  ArgMap.at(A);
       Constant* ArgNo = ConstantInt::get(Type::getInt64Ty(M->getContext()), Idx);
 
-      SetRealTemp = M->getOrInsertFunction("fpsan_get_arg", MPtrTy, Int64Ty);
+      SetRealTemp = M->getOrInsertFunction("eftsan_get_arg", MPtrTy, Int64Ty);
       
       Value* ConsInsIndex = IRB.CreateCall(SetRealTemp, {ArgNo});
       MArgMap.insert(std::pair<Argument*, Instruction*>(A, dyn_cast<Instruction>(ConsInsIndex)));
@@ -1244,7 +1244,7 @@ void EFTSanitizer::handleFuncMainInit(Function *F, int size){
     IRB.CreateStore(ShadowStack, BCToAddr1, "my_shadow_stack");
   }
 
-  Finish = M->getOrInsertFunction("fpsan_init", VoidTy, Int64Ty);
+  Finish = M->getOrInsertFunction("eftsan_init", VoidTy, Int64Ty);
   long TotIns = 0;
 
   IRB.CreateStore(ConstantInt::get(Int64Ty, 0), TimeStamp, "my_ts");
@@ -1255,7 +1255,7 @@ void EFTSanitizer::handleMainRet(Instruction *I, Function *F){
   Module *M = F->getParent();
   IRBuilder<> IRB(I);
   Type* VoidTy = Type::getVoidTy(M->getContext());
-  Finish = M->getOrInsertFunction("fpsan_finish", VoidTy);
+  Finish = M->getOrInsertFunction("eftsan_finish", VoidTy);
   IRB.CreateCall(Finish, {});
 }
 
@@ -1291,7 +1291,7 @@ EFTSanitizer::handleError2 (InvokeInst *CI,
         exit(1);
       }
       Constant* ArgNo = ConstantInt::get(Type::getInt64Ty(M->getContext()), i+1);
-      AddFunArg = M->getOrInsertFunction("fpsan_get_error", VoidTy, MPtrTy, OpTy[i]);
+      AddFunArg = M->getOrInsertFunction("eftsan_get_error", VoidTy, MPtrTy, OpTy[i]);
 
       IRB.CreateCall(AddFunArg, {OpIdx, Op[i]});
     }
@@ -1331,7 +1331,7 @@ EFTSanitizer::handleError (CallInst *CI,
         exit(1);
       }
       Constant* ArgNo = ConstantInt::get(Type::getInt64Ty(M->getContext()), i+1);
-      AddFunArg = M->getOrInsertFunction("fpsan_get_error", VoidTy, MPtrTy, OpTy[i]);
+      AddFunArg = M->getOrInsertFunction("eftsan_get_error", VoidTy, MPtrTy, OpTy[i]);
 
       IRB.CreateCall(AddFunArg, {OpIdx, Op[i]});
     }
@@ -1379,7 +1379,7 @@ EFTSanitizer::handleInvokeInst (InvokeInst *CI,
 
 */
 #endif
-    FuncInit = M->getOrInsertFunction("fpsan_get_return", MPtrTy, Int64Ty, MPtrTy);
+    FuncInit = M->getOrInsertFunction("eftsan_get_return", MPtrTy, Int64Ty, MPtrTy);
     Value* ConsInsIndex = IRBN.CreateCall(FuncInit, {StackTop, Dest});
   } 
   else if(CI->getType()->isVectorTy() && 
@@ -1387,10 +1387,10 @@ EFTSanitizer::handleInvokeInst (InvokeInst *CI,
     //considering size 2 vector
     /*
        Constant* TotalArgsConst = ConstantInt::get(Type::getInt64Ty(M->getContext()), NumOperands+2); 
-       FuncInit = M->getOrInsertFunction("fpsan_get_return", MPtrTy, Int64Ty, Int64Ty);
+       FuncInit = M->getOrInsertFunction("eftsan_get_return", MPtrTy, Int64Ty, Int64Ty);
        Value* ConsInsIndex = IRBN.CreateCall(FuncInit, {TotalArgsConst, MStackTop});
 
-       FuncInit = M->getOrInsertFunction("fpsan_get_return_vec", MPtrTy, Int64Ty, Int64Ty);
+       FuncInit = M->getOrInsertFunction("eftsan_get_return_vec", MPtrTy, Int64Ty, Int64Ty);
        Value* ConsInsIndex2 = IRBN.CreateCall(FuncInit, {TotalArgsConst, MStackTop});
        MInsMapPair.insert(std::pair<Instruction*, std::pair<Instruction*, Instruction*>>(I, 
        std::make_pair(dyn_cast<Instruction>(ConsInsIndex), dyn_cast<Instruction>(ConsInsIndex2))));
@@ -1415,9 +1415,9 @@ EFTSanitizer::handleInvokeInst (InvokeInst *CI,
       }
       Constant* ArgNo = ConstantInt::get(Type::getInt64Ty(M->getContext()), i);
       if(isFloat(OpTy[i]))
-        AddFunArg = M->getOrInsertFunction("fpsan_set_arg_f", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
+        AddFunArg = M->getOrInsertFunction("eftsan_set_arg_f", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
       else if(isDouble(OpTy[i]))
-        AddFunArg = M->getOrInsertFunction("fpsan_set_arg_d", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
+        AddFunArg = M->getOrInsertFunction("eftsan_set_arg_d", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
 
       Constant *ConsFlag;
       if(isa<ConstantFP>(Op[i])){
@@ -1471,7 +1471,7 @@ EFTSanitizer::handleCallInst (CallInst *CI,
 
 */
 #endif
-    FuncInit = M->getOrInsertFunction("fpsan_get_return", MPtrTy, Int64Ty, MPtrTy);
+    FuncInit = M->getOrInsertFunction("eftsan_get_return", MPtrTy, Int64Ty, MPtrTy);
     Value* ConsInsIndex = IRBN.CreateCall(FuncInit, {StackTop, Dest});
   } 
   else if(CI->getType()->isVectorTy() && 
@@ -1479,10 +1479,10 @@ EFTSanitizer::handleCallInst (CallInst *CI,
     //considering size 2 vector
     /*
        Constant* TotalArgsConst = ConstantInt::get(Type::getInt64Ty(M->getContext()), NumOperands+2); 
-       FuncInit = M->getOrInsertFunction("fpsan_get_return", MPtrTy, Int64Ty, Int64Ty);
+       FuncInit = M->getOrInsertFunction("eftsan_get_return", MPtrTy, Int64Ty, Int64Ty);
        Value* ConsInsIndex = IRBN.CreateCall(FuncInit, {TotalArgsConst, MStackTop});
 
-       FuncInit = M->getOrInsertFunction("fpsan_get_return_vec", MPtrTy, Int64Ty, Int64Ty);
+       FuncInit = M->getOrInsertFunction("eftsan_get_return_vec", MPtrTy, Int64Ty, Int64Ty);
        Value* ConsInsIndex2 = IRBN.CreateCall(FuncInit, {TotalArgsConst, MStackTop});
        MInsMapPair.insert(std::pair<Instruction*, std::pair<Instruction*, Instruction*>>(I, 
        std::make_pair(dyn_cast<Instruction>(ConsInsIndex), dyn_cast<Instruction>(ConsInsIndex2))));
@@ -1507,9 +1507,9 @@ EFTSanitizer::handleCallInst (CallInst *CI,
       }
       Constant* ArgNo = ConstantInt::get(Type::getInt64Ty(M->getContext()), i);
       if(isFloat(OpTy[i]))
-        AddFunArg = M->getOrInsertFunction("fpsan_set_arg_f", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
+        AddFunArg = M->getOrInsertFunction("eftsan_set_arg_f", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
       else if(isDouble(OpTy[i]))
-        AddFunArg = M->getOrInsertFunction("fpsan_set_arg_d", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
+        AddFunArg = M->getOrInsertFunction("eftsan_set_arg_d", VoidTy, MPtrTy, OpTy[i], Int8Ty, Int64Ty);
 
       Constant *ConsFlag;
       if(isa<ConstantFP>(Op[i])){
@@ -1541,7 +1541,7 @@ void EFTSanitizer::handleFuncInit(Function *F){
 
 
   Constant* ConsTotIns = ConstantInt::get(Type::getInt64Ty(M->getContext()), TotalSlots); 
-  FuncInit = M->getOrInsertFunction("fpsan_func_init", VoidTy, Int64Ty, PtrInt64Ty);
+  FuncInit = M->getOrInsertFunction("eftsan_func_init", VoidTy, Int64Ty, PtrInt64Ty);
 //  IRB.CreateCall(FuncInit, {ConsTotIns, MStackTop});
 }
 
@@ -1579,7 +1579,7 @@ void EFTSanitizer::handleMemset(CallInst *CI, BasicBlock *BB, Function *F, std::
   Value *size = CI->getOperand(2);
   if (BitCastInst *BI = dyn_cast<BitCastInst>(Op1Addr)) {
     if (checkIfBitcastFromFP(BI)) {
-      FuncInit = M->getOrInsertFunction("fpsan_handle_memset", VoidTy,
+      FuncInit = M->getOrInsertFunction("eftsan_handle_memset", VoidTy,
           PtrVoidTy, Int8Ty, Int64Ty);
 //      IRB.CreateCall(FuncInit, {Op1Addr, Op2Val, size});
     }
@@ -1588,7 +1588,7 @@ void EFTSanitizer::handleMemset(CallInst *CI, BasicBlock *BB, Function *F, std::
     Value *Addr = LI->getPointerOperand();
     if (BitCastInst *BI = dyn_cast<BitCastInst>(Addr)) {
       if (checkIfBitcastFromFP(BI)) {
-        FuncInit = M->getOrInsertFunction("fpsan_handle_memset", VoidTy,
+        FuncInit = M->getOrInsertFunction("eftsan_handle_memset", VoidTy,
             PtrVoidTy, Int8Ty, Int64Ty);
 //        IRB.CreateCall(FuncInit, {Addr, Op2Val, size});
       }
@@ -1642,7 +1642,7 @@ EFTSanitizer::handleMemCpy (CallInst *CI,
         PointerType::getUnqual(Type::getInt8Ty(M->getContext())),"", I);
   if (BitCastInst *BI = dyn_cast<BitCastInst>(Op1Addr)){
     if(checkIfBitcastFromFP(BI)){
-      FuncInit = M->getOrInsertFunction("fpsan_handle_memcpy", VoidTy, PtrVoidTy, PtrVoidTy, Int64Ty);
+      FuncInit = M->getOrInsertFunction("eftsan_handle_memcpy", VoidTy, PtrVoidTy, PtrVoidTy, Int64Ty);
       //IRB.CreateCall(FuncInit, {BCToAddr1, BCToAddr2, size});
 
       IRBuilder<> IRB(I);
@@ -1716,7 +1716,7 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
   IRBO.CreateStore(Add, InstMapGep, "my_store");
   MInsMap.insert(std::pair<Instruction*, Instruction*>(I, dyn_cast<Instruction>(BOGEP)));
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRBO.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -1750,40 +1750,40 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
   std::string funcName;
 
   if (CallName == "llvm.cos.f64") {
-    funcName = "fpsan_mpfr_llvm_cos_f64";
+    funcName = "eftsan_mpfr_llvm_cos_f64";
   }
   else if (CallName == "llvm.sin.f64") {
-    funcName = "fpsan_mpfr_llvm_sin_f64";
+    funcName = "eftsan_mpfr_llvm_sin_f64";
   }
   else if(CallName == "llvm.ceil.f64"){
-    funcName = "fpsan_mpfr_llvm_ceil";
+    funcName = "eftsan_mpfr_llvm_ceil";
   }
   else if(CallName == "llvm.floor.f64"){
-    funcName = "fpsan_mpfr_llvm_floor";
+    funcName = "eftsan_mpfr_llvm_floor";
   }
   else if(CallName == "llvm.floor.f32"){
-    funcName = "fpsan_mpfr_llvm_floor_f";
+    funcName = "eftsan_mpfr_llvm_floor_f";
   }
   else if(CallName == "llvm.fabs.f64"){
-    funcName = "fpsan_mpfr_llvm_fabs";
+    funcName = "eftsan_mpfr_llvm_fabs";
   }
   else if(CallName == "llvm.powi.f64"){
-    funcName = "fpsan_mpfr_llvm_powi";
+    funcName = "eftsan_mpfr_llvm_powi";
   }
   else if(CallName == "llvm.fabs.f32"){
-    funcName = "fpsan_mpfr_llvm_fabs32";
+    funcName = "eftsan_mpfr_llvm_fabs32";
   }
   else if(CallName == "llvm.exp.f64"){
-    funcName = "fpsan_mpfr_llvm_exp64";
+    funcName = "eftsan_mpfr_llvm_exp64";
   }
   else if(CallName == "llvm.log.f64"){
-    funcName = "fpsan_mpfr_llvm_log64";
+    funcName = "eftsan_mpfr_llvm_log64";
   }
   else if(CallName == "llvm.sqrt.f64"){
-    funcName = "fpsan_mpfr_llvm_sqrt64";
+    funcName = "eftsan_mpfr_llvm_sqrt64";
   }
   else {
-    funcName = "fpsan_mpfr_"+CallName;
+    funcName = "eftsan_mpfr_"+CallName;
   }  
 
   for(int i = 0; i < NumOperands; i++){
@@ -1811,7 +1811,7 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
       Value *TSInstMap1 = IRB.CreateLoad(IRB.getInt64Ty(), InstMapGep1, "my_ts");
 
       if(DEBUG){
-        Finish = M->getOrInsertFunction("fpsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
+        Finish = M->getOrInsertFunction("eftsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
         IRB.CreateCall(Finish, {TStampOp1, TSInstMap1, insId1});
       }
 
@@ -1853,7 +1853,7 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstTSMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, TStampOp1});
   }
 
@@ -1873,7 +1873,7 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
     BranchInst *BInst = BranchInst::Create(/*ifTrue*/NewBB, /*ifFalse*/Cont, Cond, OldBB);
 
     IRBuilder<> IRBN(NewBB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_inf", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_inf", VoidTy, MPtrTy);
     IRBN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *BJCmp = BranchInst::Create(Cont, NewBB);
 
@@ -1890,7 +1890,7 @@ EFTSanitizer::handleMathLibFunc (CallInst *CI,
     BranchInst::Create(/*ifTrue*/NewB, /*ifFalse*/NewCont, NCond, Cont);
 
     IRBuilder<> IRBNN(NewB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_nan", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_nan", VoidTy, MPtrTy);
     IRBNN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *NBJCmp = BranchInst::Create(NewCont, NewB);
   }
@@ -2150,7 +2150,7 @@ void EFTSanitizer::storeShadowAddrCons(Instruction *I, Value *OP, Value *Addr, B
                   instId}, "my_gep");
   IRB.CreateStore(Add, InstTSMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot_store", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot_store", VoidTy, Int64Ty, Int64Ty);
     IRB.CreateCall(SetRealTemp, {instId, Add});
   }
   if(ClTracing){
@@ -2246,7 +2246,7 @@ void EFTSanitizer::storeShadowAddrArg(Value *srcVal, Instruction *I, Value *OP, 
                   insId}, "my_gep");
   IRB.CreateStore(TStamp, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, TStamp});
   }
 
@@ -2298,7 +2298,7 @@ void EFTSanitizer::storeShadowAddrArg(Value *srcVal, Instruction *I, Value *OP, 
 
     if(DEBUG){
       Type* PtrVoidTy = PointerType::getUnqual(Type::getInt8Ty(M->getContext()));
-      SetRealTemp = M->getOrInsertFunction("fpsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
+      SetRealTemp = M->getOrInsertFunction("eftsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
       IRB.CreateCall(SetRealTemp, {Val, Addr, LineNo});
     }
   }
@@ -2357,7 +2357,7 @@ void EFTSanitizer::storeShadowAddrBO(Value *srcVal, Instruction *I, Value *OP, V
                   insId}, "my_gep");
   IRB.CreateStore(TStamp, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, TStamp});
   }
 
@@ -2426,11 +2426,11 @@ void EFTSanitizer::storeShadowAddrBO(Value *srcVal, Instruction *I, Value *OP, V
   //debug
   Type* PtrVoidTy = PointerType::getUnqual(Type::getInt8Ty(M->getContext()));
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
     IRB.CreateCall(SetRealTemp, {Val, Addr, lineNumber});
   }
 
-  SetRealTemp = M->getOrInsertFunction("fpsan_trace", VoidTy, MPtrTy);
+  SetRealTemp = M->getOrInsertFunction("eftsan_trace", VoidTy, MPtrTy);
 //  IRB.CreateCall(SetRealTemp, {Val});
 }
 
@@ -2488,7 +2488,7 @@ void EFTSanitizer::storeShadowAddr(Value *srcVal, Instruction *I, Value *OP, Val
                   insId}, "my_gep");
   IRB.CreateStore(TStamp, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, TStamp});
   }
 
@@ -2540,7 +2540,7 @@ void EFTSanitizer::storeShadowAddr(Value *srcVal, Instruction *I, Value *OP, Val
 
     Type* PtrVoidTy = PointerType::getUnqual(Type::getInt8Ty(M->getContext()));
     if(DEBUG){
-      SetRealTemp = M->getOrInsertFunction("fpsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
+      SetRealTemp = M->getOrInsertFunction("eftsan_handle_store", VoidTy, MPtrTy, PtrVoidTy, Int64Ty);
       IRB.CreateCall(SetRealTemp, {Val, Addr, LineNo});
     }
   }
@@ -2648,7 +2648,7 @@ void EFTSanitizer::handleStore(StoreInst *SI, BasicBlock *BB, Function *F){
       CallInst *CInst = IRB.CreateCall(Finish, {Dest, Src, Size, Flag});
       MemcpyNList.push_back(CInst);
       if(DEBUG){
-        SetRealTemp = M->getOrInsertFunction("fpsan_handle_store", VoidTy, MPtrTy, MPtrTy);
+        SetRealTemp = M->getOrInsertFunction("eftsan_handle_store", VoidTy, MPtrTy, MPtrTy);
         IRB.CreateCall(SetRealTemp, {Val, InsIndex});
       }
     }
@@ -2743,7 +2743,7 @@ void EFTSanitizer::handlePhi(PHINode *PN, BasicBlock *BB, Function *F){
   MInsMap.insert(std::pair<Instruction*, Instruction*>(I, dyn_cast<Instruction>(BOGEP)));
   ConstantInt* insId = GetInstId(F, PN);
 
-  AddFunArg = M->getOrInsertFunction("fpsan_copy_phi", VoidTy, MPtrTy, MPtrTy, Int64Ty);
+  AddFunArg = M->getOrInsertFunction("eftsan_copy_phi", VoidTy, MPtrTy, MPtrTy, Int64Ty);
 //  IRBN.CreateCall(AddFunArg, {iPHI, BOGEP, Add});
   Value *Size;
   if(ClTracing){
@@ -2770,7 +2770,7 @@ void EFTSanitizer::handlePhi(PHINode *PN, BasicBlock *BB, Function *F){
       insId}, "my_gep");
   IRBN.CreateStore(TStamp, InstTSMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, TStamp});
   }
 } 
@@ -2826,7 +2826,7 @@ void EFTSanitizer::handleReturn(ReturnInst *RI, BasicBlock *BB, Function *F){
     for (auto &I : BB) {
       if (CallInst *CI = dyn_cast<CallInst>(&I)){
         Function *Callee = CI->getCalledFunction();
-        if(Callee && Callee->getName() == "fpsan_clear_mpfr"){
+        if(Callee && Callee->getName() == "eftsan_clear_mpfr"){
           Ins = &I;
           break;
         }
@@ -2857,10 +2857,10 @@ void EFTSanitizer::handleReturn(ReturnInst *RI, BasicBlock *BB, Function *F){
       Value *Dest = IRB.CreateGEP(ShadowSL, Add);
 
       if(DEBUG){
-        SetRealTemp = M->getOrInsertFunction("fpsan_index", VoidTy, Int64Ty, MPtrTy);
+        SetRealTemp = M->getOrInsertFunction("eftsan_index", VoidTy, Int64Ty, MPtrTy);
         IRB.CreateCall(SetRealTemp, {StackTop, Dest});
       }
-      AddFunArg = M->getOrInsertFunction("fpsan_set_return", VoidTy, MPtrTy, MPtrTy, Int64Ty);
+      AddFunArg = M->getOrInsertFunction("eftsan_set_return", VoidTy, MPtrTy, MPtrTy, Int64Ty);
       IRB.CreateCall(AddFunArg, {Dest, OpIdx, Add});
       return;
     }
@@ -2881,7 +2881,7 @@ void EFTSanitizer::handleReturn(ReturnInst *RI, BasicBlock *BB, Function *F){
       long TotalArgs = FuncTotalArg.at(F);
       long TotalIns = FuncTotalIns.at(F);
       Constant* TotalArgsConst = ConstantInt::get(Type::getInt64Ty(M->getContext()), TotalArgs + TotalIns); 
-      AddFunArg = M->getOrInsertFunction("fpsan_set_return", VoidTy, MPtrTy, Int64Ty, Int64Ty);
+      AddFunArg = M->getOrInsertFunction("eftsan_set_return", VoidTy, MPtrTy, Int64Ty, Int64Ty);
       IRB.CreateCall(AddFunArg, {OpIdx, TotalArgsConst, StackTop});
 
       bool res2 = handleOperand(F, RI, V2, &OpIdx, nullptr);
@@ -2893,12 +2893,12 @@ void EFTSanitizer::handleReturn(ReturnInst *RI, BasicBlock *BB, Function *F){
         exit(1);
       }
 
-      AddFunArg = M->getOrInsertFunction("fpsan_set_return_vec", VoidTy, MPtrTy, Int64Ty, Int64Ty);
+      AddFunArg = M->getOrInsertFunction("eftsan_set_return_vec", VoidTy, MPtrTy, Int64Ty, Int64Ty);
       IRB.CreateCall(AddFunArg, {OpIdx, TotalArgsConst, StackTop});
       return;
     }
   }
-  FuncInit = M->getOrInsertFunction("fpsan_func_exit", VoidTy, Int64Ty);
+  FuncInit = M->getOrInsertFunction("eftsan_func_exit", VoidTy, Int64Ty);
   long TotalArgs = FuncTotalArg.at(F);
   Constant* ConsTotIns = ConstantInt::get(Type::getInt64Ty(M->getContext()), TotalArgs); 
 //  IRB.CreateCall(FuncInit, {ConsTotIns});
@@ -2959,13 +2959,13 @@ void EFTSanitizer::handleFNeg(UnaryOperator *UO, BasicBlock *BB, Function *F) {
   IRBI.CreateStore(Add, InstMapGep, "my_store");
   MInsMap.insert(std::pair<Instruction*, Instruction*>(I, dyn_cast<Instruction>(BOGEP)));
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
 
   std::string opName(I->getOpcodeName());
 
-  ComputeReal = M->getOrInsertFunction("fpsan_mpfr_fneg", VoidTy, MPtrTy, MPtrTy, Int32Ty);
+  ComputeReal = M->getOrInsertFunction("eftsan_mpfr_fneg", VoidTy, MPtrTy, MPtrTy, Int32Ty);
 
   InsIndex1 = ConstantPointerNull::get(cast<PointerType>(MPtrTy));
   TwoSubFNeg(I, Op1, I->getOperand(0), I, InsIndex1, InsIndex2, BOGEP);
@@ -3058,7 +3058,7 @@ void EFTSanitizer::handleBinOpVec(BinaryOperator* BO, BasicBlock *BB, Function *
     Value *Op1Load = getLoadOperandLHS(BO->getOperand(0));
     Value *Op2Load = getLoadOperandRHS(BO->getOperand(1));
 
-    ComputeReal = M->getOrInsertFunction("fpsan_mpfr_fmod2", VoidTy, MPtrTy, MPtrTy, 
+    ComputeReal = M->getOrInsertFunction("eftsan_mpfr_fmod2", VoidTy, MPtrTy, MPtrTy, 
         BO->getOperand(0)->getType(), MPtrTy, MPtrTy,
         BO->getOperand(1)->getType(), MPtrTy, BO->getType(), Int64Ty,
         Int1Ty, Int32Ty, Int32Ty, Int64Ty);
@@ -3134,7 +3134,7 @@ void EFTSanitizer::handleBinOp(BinaryOperator* BO, BasicBlock *BB, Function *F){
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
   MInsMap.insert(std::pair<Instruction*, Instruction*>(I, dyn_cast<Instruction>(BOGEP)));
@@ -3165,7 +3165,7 @@ void EFTSanitizer::handleBinOp(BinaryOperator* BO, BasicBlock *BB, Function *F){
       Value *Add = IRB.CreateAdd(GTimeStamp, ConstantInt::get(Int64Ty, 1), "my_incr_idx");
       IRB.CreateStore(Add, TimeStamp, "my_store_idx");
 
-      ComputeReal = M->getOrInsertFunction("fpsan_mpfr_fmod2", VoidTy, MPtrTy, MPtrTy, 
+      ComputeReal = M->getOrInsertFunction("eftsan_mpfr_fmod2", VoidTy, MPtrTy, MPtrTy, 
           BO->getOperand(0)->getType(), MPtrTy, MPtrTy,
           BO->getOperand(1)->getType(), MPtrTy, BO->getType(), Int64Ty,
           Int1Ty, Int32Ty, Int32Ty, Int64Ty);
@@ -3293,7 +3293,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -3325,7 +3325,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
     Value *TSInstMap1 = IRB.CreateLoad(IRB.getInt64Ty(), InstMapGep1, "my_ts");
 
     if(DEBUG){
-      Finish = M->getOrInsertFunction("fpsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
+      Finish = M->getOrInsertFunction("eftsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
       IRB.CreateCall(Finish, {TStampOp1, TSInstMap1, insId1});
     }
 
@@ -3349,7 +3349,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
 
 
     if(DEBUG){
-      Finish = M->getOrInsertFunction("fpsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
+      Finish = M->getOrInsertFunction("eftsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
       IRB.CreateCall(Finish, {TStampOp2, TSInstMap2, insId2});
     }
 
@@ -3363,7 +3363,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
     StoreList.push_back(dyn_cast<StoreInst>(StoreIns6));
   }
   if(ClDetectAllRoundingErrors){
-    SetRealTemp = M->getOrInsertFunction("fpsan_sum", VoidTy, DoubleTy, DoubleTy, DoubleTy,
+    SetRealTemp = M->getOrInsertFunction("eftsan_sum", VoidTy, DoubleTy, DoubleTy, DoubleTy,
         MPtrTy, MPtrTy, MPtrTy, Int64Ty, DoubleTy, DoubleTy);
     IRB.CreateCall(SetRealTemp, {Res, Op1a, Op2b, BOGEP, InsIndex1, InsIndex2, instId, BinOpY, Err});
   }
@@ -3380,7 +3380,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
     BranchInst *BInst = BranchInst::Create(/*ifTrue*/NewBB, /*ifFalse*/Cont, Cond, OldBB);
 
     IRBuilder<> IRBN(NewBB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_inf", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_inf", VoidTy, MPtrTy);
     IRBN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *BJCmp = BranchInst::Create(Cont, NewBB);
 
@@ -3397,7 +3397,7 @@ void EFTSanitizer::TwoSum(Instruction *I,
     BranchInst::Create(/*ifTrue*/NewB, /*ifFalse*/NewCont, NCond, Cont);
 
     IRBuilder<> IRBNN(NewB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_nan", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_nan", VoidTy, MPtrTy);
     IRBNN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *NBJCmp = BranchInst::Create(NewCont, NewB);
   }
@@ -3532,7 +3532,7 @@ void EFTSanitizer::TwoSubFNeg(Instruction *I,
   }
 
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_sub", VoidTy, DoubleTy, DoubleTy, DoubleTy,
+    SetRealTemp = M->getOrInsertFunction("eftsan_sub", VoidTy, DoubleTy, DoubleTy, DoubleTy,
                                               MPtrTy, MPtrTy, MPtrTy, Int64Ty, DoubleTy, DoubleTy);
     //IRB.CreateCall(SetRealTemp, {Res, Op1a, Op2b, BOGEP, InsIndex1, InsIndex2, instId, BinOpY, Err});
   }
@@ -3638,7 +3638,7 @@ void EFTSanitizer::TwoSub(Instruction *I,
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -3694,15 +3694,15 @@ void EFTSanitizer::TwoSub(Instruction *I,
     StoreList.push_back(dyn_cast<StoreInst>(StoreIns6));
 
     if(DEBUG){
-      Finish = M->getOrInsertFunction("fpsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
+      Finish = M->getOrInsertFunction("eftsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
       IRB.CreateCall(Finish, {TStampOp1, TSInstMap1, insId1});
-      Finish = M->getOrInsertFunction("fpsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
+      Finish = M->getOrInsertFunction("eftsan_valid", VoidTy, Int64Ty, Int64Ty, Int64Ty);
       IRB.CreateCall(Finish, {TStampOp2, TSInstMap2, insId2});
     }
   }
 
   if(ClDetectAllRoundingErrors){
-    SetRealTemp = M->getOrInsertFunction("fpsan_sub", VoidTy, DoubleTy, DoubleTy, DoubleTy,
+    SetRealTemp = M->getOrInsertFunction("eftsan_sub", VoidTy, DoubleTy, DoubleTy, DoubleTy,
                                               MPtrTy, MPtrTy, MPtrTy, Int64Ty, DoubleTy, DoubleTy);
     IRB.CreateCall(SetRealTemp, {Res, Op1a, Op2b, BOGEP, InsIndex1, InsIndex2, instId, BinOpY, Err});
   }
@@ -3719,7 +3719,7 @@ void EFTSanitizer::TwoSub(Instruction *I,
     BranchInst *BInst = BranchInst::Create(/*ifTrue*/NewBB, /*ifFalse*/Cont, Cond, OldBB);
 
     IRBuilder<> IRBN(NewBB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_inf", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_inf", VoidTy, MPtrTy);
     IRBN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *BJCmp = BranchInst::Create(Cont, NewBB);
 
@@ -3736,7 +3736,7 @@ void EFTSanitizer::TwoSub(Instruction *I,
     BranchInst::Create(/*ifTrue*/NewB, /*ifFalse*/NewCont, NCond, Cont);
 
     IRBuilder<> IRBNN(NewB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_nan", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_nan", VoidTy, MPtrTy);
     IRBNN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *NBJCmp = BranchInst::Create(NewCont, NewB);
   }
@@ -3848,7 +3848,7 @@ void EFTSanitizer::TwoMul(Instruction *I,
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -3903,7 +3903,7 @@ void EFTSanitizer::TwoMul(Instruction *I,
 
   }
   if(ClDetectAllRoundingErrors){
-    SetRealTemp = M->getOrInsertFunction("fpsan_mul", VoidTy, DoubleTy, DoubleTy, DoubleTy,
+    SetRealTemp = M->getOrInsertFunction("eftsan_mul", VoidTy, DoubleTy, DoubleTy, DoubleTy,
                                               MPtrTy, MPtrTy, MPtrTy, Int64Ty, DoubleTy, DoubleTy);
     IRB.CreateCall(SetRealTemp, {Res, Op1a, Op2b, BOGEP, InsIndex1, InsIndex2, instId, BinOpY, Err});
   }
@@ -3919,7 +3919,7 @@ void EFTSanitizer::TwoMul(Instruction *I,
     BranchInst *BInst = BranchInst::Create(/*ifTrue*/NewBB, /*ifFalse*/Cont, Cond, OldBB);
 
     IRBuilder<> IRBN(NewBB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_inf", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_inf", VoidTy, MPtrTy);
     IRBN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *BJCmp = BranchInst::Create(Cont, NewBB);
 
@@ -3936,7 +3936,7 @@ void EFTSanitizer::TwoMul(Instruction *I,
     BranchInst::Create(/*ifTrue*/NewB, /*ifFalse*/NewCont, NCond, Cont);
 
     IRBuilder<> IRBNN(NewB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_nan", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_nan", VoidTy, MPtrTy);
     IRBNN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *NBJCmp = BranchInst::Create(NewCont, NewB);
   }
@@ -4052,7 +4052,7 @@ void EFTSanitizer::TwoDiv(Instruction *I,
                   insId}, "my_gep");
   IRB.CreateStore(Add, InstMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot", VoidTy, Int64Ty, Int64Ty);
 //    IRB.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -4107,7 +4107,7 @@ void EFTSanitizer::TwoDiv(Instruction *I,
   }
 
   if(ClDetectAllRoundingErrors){
-    SetRealTemp = M->getOrInsertFunction("fpsan_div", VoidTy, DoubleTy, DoubleTy, DoubleTy,
+    SetRealTemp = M->getOrInsertFunction("eftsan_div", VoidTy, DoubleTy, DoubleTy, DoubleTy,
         MPtrTy, MPtrTy, MPtrTy, Int64Ty, DoubleTy, DoubleTy);
     IRB.CreateCall(SetRealTemp, {Res, Op1a, Op2b, BOGEP, InsIndex1, InsIndex2, instId, BinOpY, Err});
   }
@@ -4123,7 +4123,7 @@ void EFTSanitizer::TwoDiv(Instruction *I,
     BranchInst *BInst = BranchInst::Create(/*ifTrue*/NewBB, /*ifFalse*/Cont, Cond, OldBB);
 
     IRBuilder<> IRBN(NewBB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_inf", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_inf", VoidTy, MPtrTy);
     IRBN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *BJCmp = BranchInst::Create(Cont, NewBB);
 
@@ -4140,7 +4140,7 @@ void EFTSanitizer::TwoDiv(Instruction *I,
     BranchInst::Create(/*ifTrue*/NewB, /*ifFalse*/NewCont, NCond, Cont);
 
     IRBuilder<> IRBNN(NewB);
-    SetRealTemp = M->getOrInsertFunction("fpsan_report_nan", VoidTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_report_nan", VoidTy, MPtrTy);
     IRBNN.CreateCall(SetRealTemp, {BOGEP});
     BranchInst *NBJCmp = BranchInst::Create(NewCont, NewB);
   }
@@ -4207,7 +4207,7 @@ void EFTSanitizer::handleFPTrunc(FPTruncInst *FPT, BasicBlock *BB, Function *F){
   }
   Type* VoidTy = Type::getVoidTy(M->getContext());
 
-  CheckBranch = M->getOrInsertFunction("fpsan_handle_fptrunc", VoidTy, FPT->getType(), MPtrTy);
+  CheckBranch = M->getOrInsertFunction("eftsan_handle_fptrunc", VoidTy, FPT->getType(), MPtrTy);
 //  IRB.CreateCall(CheckBranch, {FPT, InsIndex1});
 }
 
@@ -4249,7 +4249,7 @@ void EFTSanitizer::handleFPToUI(FPToUIInst *FI, BasicBlock *BB, Function *F){
   ConstantInt* lineNumber = ConstantInt::get(Int32Ty, lineNum);
   ConstantInt* colNumber = ConstantInt::get(Int32Ty, colNum);
 
-  CheckBranch = M->getOrInsertFunction("fpsan_check_conv_ui", VoidTy, FI->getType(), MPtrTy);
+  CheckBranch = M->getOrInsertFunction("eftsan_check_conv_ui", VoidTy, FI->getType(), MPtrTy);
   IRB.CreateCall(CheckBranch, {FI, InsIndex1});
 }
 
@@ -4291,7 +4291,7 @@ void EFTSanitizer::handleFPToSI(FPToSIInst *FI, BasicBlock *BB, Function *F){
   ConstantInt* lineNumber = ConstantInt::get(Int32Ty, lineNum);
   ConstantInt* colNumber = ConstantInt::get(Int32Ty, colNum);
 
-  CheckBranch = M->getOrInsertFunction("fpsan_check_conv_si", VoidTy, FI->getType(), MPtrTy);
+  CheckBranch = M->getOrInsertFunction("eftsan_check_conv_si", VoidTy, FI->getType(), MPtrTy);
   IRB.CreateCall(CheckBranch, {FI, InsIndex1});
 }
 
@@ -4349,19 +4349,19 @@ void EFTSanitizer::handleFcmp(FCmpInst *FCI, BasicBlock *BB, Function *F){
   Constant* OpCode = ConstantInt::get(Type::getInt64Ty(M->getContext()), FCI->getPredicate());
   if(isFloat(FCIOpType)){
     if(isa<ConstantFP>(Op1) && !isa<ConstantFP>(Op2)){
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_f1", Int1Ty, FCIOpType, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_f1", Int1Ty, FCIOpType, FCIOpType, 
           MPtrTy, Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), FCI->getOperand(1), InsIndex2, 
           OpCode, I, lineNumber});
     }
     else if(!isa<ConstantFP>(Op1) && isa<ConstantFP>(Op2)){
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_f2", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_f2", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
           Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), InsIndex1, FCI->getOperand(1), 
           OpCode, I, lineNumber});
     }
     else{
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_f", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_f", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
           MPtrTy, Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), InsIndex1, FCI->getOperand(1), InsIndex2, 
           OpCode, I, lineNumber});
@@ -4369,19 +4369,19 @@ void EFTSanitizer::handleFcmp(FCmpInst *FCI, BasicBlock *BB, Function *F){
   }
   else if(isDouble(FCIOpType)){
     if(isa<ConstantFP>(Op1) && !isa<ConstantFP>(Op2)){
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_d1", Int1Ty, FCIOpType, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_d1", Int1Ty, FCIOpType, FCIOpType, 
           MPtrTy, Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), FCI->getOperand(1), InsIndex2, 
           OpCode, I, lineNumber});
     }
     else if(!isa<ConstantFP>(Op1) && isa<ConstantFP>(Op2)){
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_d2", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_d2", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
           Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), InsIndex1, FCI->getOperand(1), 
           OpCode, I, lineNumber});
     }
     else{
-      CheckBranch = M->getOrInsertFunction("fpsan_check_branch_d", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
+      CheckBranch = M->getOrInsertFunction("eftsan_check_branch_d", Int1Ty, FCIOpType, MPtrTy, FCIOpType, 
           MPtrTy, Int64Ty, Int1Ty, Int32Ty);
       IRB.CreateCall(CheckBranch, {FCI->getOperand(0), InsIndex1, FCI->getOperand(1), InsIndex2, 
           OpCode, I, lineNumber});
@@ -4457,7 +4457,7 @@ Value* EFTSanitizer::loadShadowAddr(Instruction *I, Value *Addr, BasicBlock *BB,
   Value *Computed = IRBI.CreateLoad(DoubleTy, ValGep, "my_load");
   Value* Cond = IRBI.CreateFCmp(FCmpInst::FCMP_UNE, Computed, LoadV);
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_load_reset", VoidTy, DoubleTy, DoubleTy, Int1Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_load_reset", VoidTy, DoubleTy, DoubleTy, Int1Ty);
     IRBI.CreateCall(SetRealTemp, {Computed, LoadV, Cond});
   }
   FCmpList.push_back(dyn_cast<FCmpInst>(Cond));
@@ -4501,7 +4501,7 @@ Value* EFTSanitizer::loadShadowAddr(Instruction *I, Value *Addr, BasicBlock *BB,
                   insId}, "my_gep");
   IRBNN.CreateStore(Add, InstTSMapGep, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot_load_reset", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot_load_reset", VoidTy, Int64Ty, Int64Ty);
     IRBNN.CreateCall(SetRealTemp, {insId, Add});
   }
 
@@ -4553,7 +4553,7 @@ Value* EFTSanitizer::loadShadowAddr(Instruction *I, Value *Addr, BasicBlock *BB,
                   insId}, "my_gep");
   IRBO.CreateStore(TStamp, InstTSMapGep1, "my_store");
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_slot_load", VoidTy, Int64Ty, Int64Ty);
+    SetRealTemp = M->getOrInsertFunction("eftsan_slot_load", VoidTy, Int64Ty, Int64Ty);
     IRBO.CreateCall(SetRealTemp, {insId, TStamp});
   }
   Value *InstMapGep1 = IRBO.CreateGEP(InstMap, {ConstantInt::get(Type::getInt64Ty(M->getContext()), 0),
@@ -4580,7 +4580,7 @@ Value* EFTSanitizer::loadShadowAddr(Instruction *I, Value *Addr, BasicBlock *BB,
   MemcpyNList.push_back(CInst);
 
   if(DEBUG){
-    SetRealTemp = M->getOrInsertFunction("fpsan_handle_load", VoidTy, MPtrTy, MPtrTy);
+    SetRealTemp = M->getOrInsertFunction("eftsan_handle_load", VoidTy, MPtrTy, MPtrTy);
     IRB.CreateCall(SetRealTemp, {BOGEP, Val});
   }
   return BOGEP;
@@ -4762,14 +4762,14 @@ void EFTSanitizer::handleIns(Instruction *I, BasicBlock *BB, Function *F){
         //set a constant
         IRBuilder<> IRB(I);
         Value *BOGEP = GEPMap.at(I);
-        SetRealTemp = M->getOrInsertFunction("fpsan_set_epsilon_precision_const", VoidTy, MPtrTy);
+        SetRealTemp = M->getOrInsertFunction("eftsan_set_epsilon_precision_const", VoidTy, MPtrTy);
         IRB.CreateCall(SetRealTemp, {BOGEP});
       }
       */
       if(Callee->getName().startswith("llvm.memcpy")){
         MemcpyList.push_back(CI);
       }
-      else if(Callee->getName().startswith("fpsan_print_error")){
+      else if(Callee->getName().startswith("eftsan_print_error")){
         handleError(CI, BB, F);
         AllInstList.push_back(CI);
       }
@@ -4783,7 +4783,7 @@ void EFTSanitizer::handleIns(Instruction *I, BasicBlock *BB, Function *F){
         handleCallInst(CI, BB, F);
       }
       else{
-        if(!Callee->getName().startswith("fpsan")){
+        if(!Callee->getName().startswith("eftsan")){
           if(isFloatType(CI->getType())){
             errs()<<"Check this function call:"<<*CI<<"\n";
           }
@@ -4794,7 +4794,7 @@ void EFTSanitizer::handleIns(Instruction *I, BasicBlock *BB, Function *F){
       handleCallInst(CI, BB, F);
     }
     else{
-      if(Callee && !Callee->getName().startswith("fpsan"))
+      if(Callee && !Callee->getName().startswith("eftsan"))
         if(isFloatType(CI->getType())){
           errs()<<"Check this function call:"<<*CI<<"\n";
         }
@@ -4803,7 +4803,7 @@ void EFTSanitizer::handleIns(Instruction *I, BasicBlock *BB, Function *F){
   else if (InvokeInst *CI = dyn_cast<InvokeInst>(I)){
     Function *Callee = CI->getCalledFunction();
     if (Callee) {
-      if(Callee->getName().startswith("fpsan_print_error")){
+      if(Callee->getName().startswith("eftsan_print_error")){
         handleError2(CI, BB, F);
       }
       else if(isListedFunction(Callee->getName(), "functions.txt")){
