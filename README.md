@@ -1,16 +1,17 @@
 # EFTSanitizer: Fast Shadow Execution using Error Free Transformations
 
-by [Sangeeta Chowdhary] (https://github.com/sangeeta0201) and [Santosh Nagarakatte](https://people.cs.rutgers.edu/~sn349/)
+by [Sangeeta Chowdhary](https://github.com/sangeeta0201) and [Santosh Nagarakatte](https://people.cs.rutgers.edu/~sn349/)
 
 
 ## About EFTSanitizer
 
-EFTSanitizer is a tool for fast shadow execution that uses error free
+EFTSanitizer is a tool for fast shadow execution. It uses error free
 transformations as the oracle to detect and debug numerical errors.
 For more details, read our [OOPSLA 2022
 paper](https://people.cs.rutgers.edu/~sn349/papers/eftsanitizer-oopsla-2022.pdf).
 
-The easiest way to test out EFTSanitizer is use the [OOPSLA 2022 artifact](https://doi.org/10.5281/zenodo.7080559)
+The easiest way to test out EFTSanitizer is to use the [OOPSLA 2022
+artifact](https://doi.org/10.5281/zenodo.7080559)
 
 ### Quick Start
 
