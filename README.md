@@ -88,7 +88,7 @@ Then build the pass with the following commands
 ```
    cd runtime 
    make
-   cd ../..
+   cd ..
 
 ```
 
