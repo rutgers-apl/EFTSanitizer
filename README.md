@@ -48,7 +48,7 @@ We provide details for installing EFTSanitizer on a machine running Ubuntu.
    export CXX=clang++
    export CC=clang
    export LLVM_HOME=<path to LLVM build directory>
-   export PATH=$LLVM_HOME/build/bin:$PATH
+   export PATH=$LLVM_HOME/bin:$PATH
 ```
 
 4. Clone EFTSanitizer git repo.
