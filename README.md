@@ -98,7 +98,7 @@ Then build the pass with the following commands
    export EFT_HOME=<path to the EFTSanitizer Github directory>
    export LD_LIBRARY_PATH=$EFT_HOME/runtime/obj
    export LLVM_PASS_LIB=" $EFT_HOME/llvm_pass/build/EFTSan/libEFTSanitizer.so -eftsan "
-   "/common/home/sn349/eftsanitizer-oopsla-camera-ready/EFTSanitizer/llvm_pass/build/EFTSan/libEFTSanitizer.so -eftsan "
+
   
 ```
 
